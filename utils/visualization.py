@@ -63,7 +63,7 @@ def plot_anomaly_score_distributions(scores: dict, ground_truths_list, save_fold
         ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
         ax.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
 
-        with plt.style.context(['science', 'ieee', 'no-latex']):
+        with plt.style.context(['default', 'classic']):
             sns.histplot(np.random.choice(normal_score, N_COUNT), color="green", bins=50, label='${d(p_n)}$',
                          stat='probability', alpha=.75)
             sns.histplot(np.random.choice(abnormal_score, N_COUNT), color="red", bins=50, label='${d(p_a)}$',

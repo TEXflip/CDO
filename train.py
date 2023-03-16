@@ -139,22 +139,18 @@ def main(args):
     # directly utilize existing model for evaluation
     model_load_path = os.path.join(model_dir, f'{model_name}.pt')
 
-    try:
-        model.load(model_load_path)
+    model.load(model_load_path)
 
-        metrics = test_epoch(model, test_dataloader, device, True, img_dir,
-                             class_name=kwargs['class_name'], cal_pro=kwargs['cal_pro'])
-        logger.info(f"\n")
+    metrics = test_epoch(model, test_dataloader, device, True, img_dir,
+                            class_name=kwargs['class_name'], cal_pro=kwargs['cal_pro'])
+    logger.info(f"\n")
 
-        for k, v in metrics.items():
-            logger.info(f"{kwargs['class_name']}======={k}: {v:.2f}")
+    for k, v in metrics.items():
+        logger.info(f"{kwargs['class_name']}======={k}: {v:.2f}")
 
-        # save in csv format
-        save_metric(metrics, dataset_classes[kwargs['dataset']], kwargs['class_name'],
-                    kwargs['dataset'], csv_path)
-
-    except:
-        print(f'Evaluation error. Please check the existence of a trained model in {model_load_path}')
+    # save in csv format
+    save_metric(metrics, dataset_classes[kwargs['dataset']], kwargs['class_name'],
+                kwargs['dataset'], csv_path)
 
 
 def str2bool(v):
