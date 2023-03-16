@@ -77,7 +77,7 @@ def main(args):
     logger.info('=========================================')
 
     setup_seed(kwargs['seed'])
-    device = f"cuda:{kwargs['gpu_id']}"
+    device = f"cuda:{kwargs['gpu_id']}" if torch.cuda.is_available() else "cpu"
     kwargs['device'] = device
 
     # prepare the experiment dir

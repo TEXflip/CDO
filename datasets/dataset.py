@@ -1,5 +1,6 @@
 import glob
 import os
+import yaml
 
 import cv2
 import numpy as np
@@ -10,9 +11,11 @@ from torchvision import transforms
 mean_train = [0.485, 0.456, 0.406]
 std_train = [0.229, 0.224, 0.225]
 
-DATA_ROOT = '../datasets/'
-MVTEC2D_DIR = 'mvtec_anomaly_detection'
-MVTEC3D_DIR = 'mvtec_3d_anomaly_detection'
+with open('config.yaml', 'r') as f:
+    conf = yaml.safe_load(f)
+    DATA_ROOT = conf.get('DATA_ROOT','../datasets/')
+    MVTEC2D_DIR = conf.get('MVTEC2D_DIR', 'mvtec_anomaly_detection')
+    MVTEC3D_DIR = conf.get('MVTEC3D_DIR', 'mvtec_3d_anomaly_detection')
 
 mvtec2d_classes = ['carpet', 'grid', 'leather', 'tile', 'wood',
                    'bottle', 'cable', 'capsule', 'hazelnut', 'metal_nut', 'pill',

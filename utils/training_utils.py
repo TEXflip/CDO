@@ -64,7 +64,9 @@ def get_dir_from_args(root_dir, class_name, backbone, **kwargs):
     os.makedirs(logger_dir, exist_ok=True)
     os.makedirs(csv_dir, exist_ok=True)
 
-    logger.start(log_file_name)
+    handler = logging.FileHandler(log_file_name)
+    handler.setLevel(logging.DEBUG)
+    logger.addHandler(handler)
 
     logger.info(f"===> Root dir for this experiment: {logger_dir}")
 

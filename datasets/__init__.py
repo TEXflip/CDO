@@ -1,7 +1,9 @@
 from .dataset import CDODataset, mean_train, std_train
 import numpy as np
 from torch.utils.data import DataLoader
-from loguru import logger
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 

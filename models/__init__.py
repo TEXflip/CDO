@@ -1,5 +1,6 @@
 from models.CDO import *
-from loguru import logger
+import logging
+logger = logging.getLogger(__name__)
 
 def get_model_from_args(**kwargs)->CDOModel:
     model = CDOModel(**kwargs)

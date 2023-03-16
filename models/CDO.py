@@ -1,10 +1,7 @@
 import torch
 from models.resnet import *
-import numpy as np
-import os
 from models.hrnet.hrnet import HRNet_
 from torch.nn import functional as F
-import loguru
 from scipy.ndimage import gaussian_filter
 
 valid_resnet_backbones = ['resnet18', 'resnet34', 'resnet50', 'wide_resnet50_2']
