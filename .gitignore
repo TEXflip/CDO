@@ -1,3 +1,6 @@
 /result/
 /.idea/
 **/__pycache__
+
+env
+.venv
