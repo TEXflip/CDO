@@ -71,3 +71,16 @@ def get_dir_from_args(root_dir, class_name, backbone, **kwargs):
     logger.info(f"===> Root dir for this experiment: {logger_dir}")
 
     return model_dir, img_dir, tensorboard_dir, logger_dir, model_name, csv_path
+
+def json_to_markdown_innested_list(json_dict, ind_level=0):
+
+    markdown = ''
+    for key, value in json_dict.items():
+        if isinstance(value, dict):
+            indentation = '\t' * ind_level
+            markdown += f"{indentation}- **{key}**:\n"
+            markdown += json_to_markdown_innested_list(value, ind_level + 1)
+        else:
+            indentation = '\t' * ind_level
+            markdown += f"{indentation}- **{key}**: {value}\n"
+    return markdown

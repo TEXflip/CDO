@@ -1,3 +1,4 @@
+import json
 import argparse
 from tqdm import tqdm
 from datasets import *
@@ -96,6 +97,7 @@ def main(args):
 
     # get the tensorboard logger
     tensorboard_logger = get_tensorboard_logger_from_args(tensorboard_dir, True)
+    tensorboard_logger.add_text('args',  json_to_markdown_innested_list(kwargs))
 
     if not kwargs['pure_test']:  # train the model first
 
