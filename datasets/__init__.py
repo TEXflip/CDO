@@ -3,6 +3,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 
 import logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
