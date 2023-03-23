@@ -148,6 +148,7 @@ load_function_dict = {
 
 
 class CDODataset(Dataset):
+    epoch_ratio = 0
     def __init__(self, dataset_name, category, input_size, phase,
                  load_memory=False, perturbed=False):
 
@@ -205,8 +206,11 @@ class CDODataset(Dataset):
 
     def augment_image(self, image):
 
+        noise_amplitude = np.power(self.epoch_ratio, 5) * 127
+
         # generate noise image
-        noise_image = np.random.randint(0, 255, size=image.shape).astype(np.float32) / 255.0
+        noise_image = np.random.randint(0 + noise_amplitude, 255 - noise_amplitude, 
+                                        size=image.shape).astype(np.float32) / 255.0
         patch_mask = np.zeros(image.shape[:2], dtype=np.float32)
 
         # get bkg mask

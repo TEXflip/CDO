@@ -113,6 +113,7 @@ def main(args):
 
         for epoch in epoch_bar:
 
+            train_dataloader.epoch_ratio = (epoch / kwargs['num_epochs'])
             loss_sum = train_epoch(model, train_dataloader, optimizer, device)
             tensorboard_logger.add_scalar('loss', loss_sum, epoch)
 
