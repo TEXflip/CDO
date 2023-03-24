@@ -113,7 +113,7 @@ def main(args):
 
         for epoch in epoch_bar:
 
-            train_dataloader.epoch_ratio = (epoch / kwargs['num_epochs'])
+            train_dataset_inst.epoch_ratio = (epoch / kwargs['num_epochs'])
             loss_sum = train_epoch(model, train_dataloader, optimizer, device)
             tensorboard_logger.add_scalar('loss', loss_sum, epoch)
 
@@ -126,7 +126,7 @@ def main(args):
 
                 # as the pro metric calculation is costly, we only calculate it in the last evaluation
                 metrics = test_epoch(model, test_dataloader, device, is_viz, img_dir,
-                                     class_name=kwargs['class_name'], cal_pro=False)
+                                     class_name=kwargs['class_name'], cal_pro=True)
 
                 model_save_path = os.path.join(model_dir, f'{model_name}.pt')
                 model.save(model_save_path, metrics)
@@ -185,6 +185,7 @@ def get_args():
     parser.add_argument("--backbone", type=str, default="hrnet32",
                         choices=['resnet18', 'resnet34', 'resnet50', 'wide_resnet50_2', 'hrnet18', 'hrnet32',
                                  'hrnet48'])
+    parser.add_argument("--augm-red", type=str, default="", choices=['noise', 'alpha', ''])
     parser.add_argument("--MOM", type=str2bool, default=True)
     parser.add_argument("--OOM", type=str2bool, default=True)
     parser.add_argument("--gamma", type=float, default=2.)

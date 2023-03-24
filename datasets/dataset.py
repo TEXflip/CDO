@@ -149,8 +149,9 @@ load_function_dict = {
 
 class CDODataset(Dataset):
     epoch_ratio = 0
+    augm_red_type = ""
     def __init__(self, dataset_name, category, input_size, phase,
-                 load_memory=False, perturbed=False):
+                 load_memory=False, perturbed=False, augm_red = ""):
 
         assert dataset_name in list(load_function_dict.keys())
 
@@ -158,6 +159,7 @@ class CDODataset(Dataset):
         self.skip_bkg = SKIP_BACKGROUND[dataset_name][category]
         self.phase = phase
         self.perturbed = perturbed
+        self.augm_red_type = augm_red
 
         if phase == 'test':
             self.perturbed = False
@@ -206,11 +208,14 @@ class CDODataset(Dataset):
 
     def augment_image(self, image):
 
-        noise_amplitude = np.power(self.epoch_ratio, 5) * 127
+        if self.augm_red_type == "noise":
+            noise_amplitude = self.epoch_ratio * 127
+            noise_image = np.random.randint(0 + noise_amplitude, 255 - noise_amplitude, 
+                                            size=image.shape).astype(np.float32) / 255.0
+        else:
+            noise_image = np.random.randint(0, 255, size=image.shape).astype(np.float32) / 255.0
 
         # generate noise image
-        noise_image = np.random.randint(0 + noise_amplitude, 255 - noise_amplitude, 
-                                        size=image.shape).astype(np.float32) / 255.0
         patch_mask = np.zeros(image.shape[:2], dtype=np.float32)
 
         # get bkg mask
@@ -251,7 +256,12 @@ class CDODataset(Dataset):
 
             patch_mask[coor_min_dim1:coor_max_dim1, coor_min_dim2:coor_max_dim2] = 1.0
 
-        augmented_image[patch_mask > 0] = noise_image[patch_mask > 0]
+        if self.augm_red_type == "alpha":
+            alpha = np.power(self.epoch_ratio, 2) * 0.6
+            blended_noise = (1 - alpha) * noise_image[patch_mask > 0] + alpha * augmented_image[patch_mask > 0]
+            augmented_image[patch_mask > 0] = blended_noise
+        else:
+            augmented_image[patch_mask > 0] = noise_image[patch_mask > 0]
 
         patch_mask = patch_mask[:, :, np.newaxis]
 

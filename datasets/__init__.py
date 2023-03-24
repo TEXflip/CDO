@@ -21,7 +21,8 @@ def get_dataloader_from_args(phase, **kwargs):
         input_size=kwargs['img_cropsize'],
         phase=phase,
         load_memory=kwargs['load_memory'],
-        perturbed=kwargs['MOM'] # if MOM is applied, the data should be random perturbed
+        perturbed=kwargs['MOM'], # if MOM is applied, the data should be random perturbed
+        augm_red=kwargs['augm_red']
     )
 
     if phase == 'train':
