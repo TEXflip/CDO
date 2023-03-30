@@ -187,6 +187,9 @@ class CDODataset(Dataset):
 
         if self.load_memory:
             self.load_dataset_to_memory()
+    
+    def alpha_fun(self):
+        return np.power(self.epoch_ratio, 4) * 0.8
 
     def get_size(self):
         return self.h, self.w
@@ -257,7 +260,7 @@ class CDODataset(Dataset):
             patch_mask[coor_min_dim1:coor_max_dim1, coor_min_dim2:coor_max_dim2] = 1.0
 
         if self.augm_red_type == "alpha":
-            alpha = np.power(self.epoch_ratio, 2) * 0.6
+            alpha = self.alpha_fun()
             blended_noise = (1 - alpha) * noise_image[patch_mask > 0] + alpha * augmented_image[patch_mask > 0]
             augmented_image[patch_mask > 0] = blended_noise
         else:

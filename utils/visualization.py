@@ -36,15 +36,16 @@ def plot_sample_cv2(names, imgs, scores_: dict, gts, save_folder=None):
         mask_imgs.append(mask_imgs_)
 
     # save imgs
-    for idx in range(total_number):
-        cv2.imwrite(os.path.join(save_folder, f'{names[idx]}_ori.jpg'), cv2.cvtColor(imgs[idx], cv2.COLOR_RGB2BGR))
-        cv2.imwrite(os.path.join(save_folder, f'{names[idx]}_gt.jpg'), cv2.cvtColor(mask_imgs[idx], cv2.COLOR_RGB2BGR))
+    if save_folder is not None:
+        for idx in range(total_number):
+            cv2.imwrite(os.path.join(save_folder, f'{names[idx]}_ori.jpg'), cv2.cvtColor(imgs[idx], cv2.COLOR_RGB2BGR))
+            cv2.imwrite(os.path.join(save_folder, f'{names[idx]}_gt.jpg'), cv2.cvtColor(mask_imgs[idx], cv2.COLOR_RGB2BGR))
 
-        for key in scores:
-            heat_map = cv2.applyColorMap(scores[key][idx], cv2.COLORMAP_JET)
-            visz_map = cv2.addWeighted(heat_map, 0.5, imgs[idx], 0.5, 0)
-            cv2.imwrite(os.path.join(save_folder, f'{names[idx]}_{key}.jpg'),
-                        visz_map)
+            for key in scores:
+                heat_map = cv2.applyColorMap(scores[key][idx], cv2.COLORMAP_JET)
+                visz_map = cv2.addWeighted(heat_map, 0.5, imgs[idx], 0.5, 0)
+                cv2.imwrite(os.path.join(save_folder, f'{names[idx]}_{key}.jpg'),
+                            visz_map)
 
 
 def plot_anomaly_score_distributions(scores: dict, ground_truths_list, save_folder, class_name):

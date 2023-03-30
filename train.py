@@ -116,6 +116,7 @@ def main(args):
             train_dataset_inst.epoch_ratio = (epoch / kwargs['num_epochs'])
             loss_sum = train_epoch(model, train_dataloader, optimizer, device)
             tensorboard_logger.add_scalar('loss', loss_sum, epoch)
+            tensorboard_logger.add_scalar('alpha', train_dataset_inst.alpha_fun(), epoch)
 
             if epoch % kwargs['validation_epoch'] == 0 or epoch == kwargs['num_epochs'] - 1:
 
@@ -154,6 +155,7 @@ def main(args):
     # save in csv format
     save_metric(metrics, dataset_classes[kwargs['dataset']], kwargs['class_name'],
                 kwargs['dataset'], csv_path)
+    tensorboard_logger.add_text('final_metrics',  json_to_markdown_innested_list(metrics))
 
 
 def str2bool(v):
