@@ -8,6 +8,8 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
 
+from utils.noise import NOISE_GENERATORS
+
 mean_train = [0.485, 0.456, 0.406]
 std_train = [0.229, 0.224, 0.225]
 
@@ -150,8 +152,9 @@ load_function_dict = {
 class CDODataset(Dataset):
     epoch_ratio = 0
     augm_red_type = ""
+
     def __init__(self, dataset_name, category, input_size, phase,
-                 load_memory=False, perturbed=False, augm_red = ""):
+                 load_memory=False, perturbed=False, augm_red = [""]):
 
         assert dataset_name in list(load_function_dict.keys())
 
@@ -159,6 +162,7 @@ class CDODataset(Dataset):
         self.skip_bkg = SKIP_BACKGROUND[dataset_name][category]
         self.phase = phase
         self.perturbed = perturbed
+        augm_red = set(augm_red)
         self.augm_red_type = augm_red
 
         if phase == 'test':
@@ -181,6 +185,11 @@ class CDODataset(Dataset):
         self.resize_shape = (input_size, input_size)
         self.h = input_size
         self.w = input_size
+
+        # noise generators
+        gen_str = augm_red.intersection(set(NOISE_GENERATORS.keys()))
+        gen = gen_str.pop() if len(gen_str) > 0 else ""
+        self.noise_gen = NOISE_GENERATORS[gen](size=self.resize_shape, ch=3)
 
         # load datasets
         self.img_paths, self.gt_paths, self.labels, self.types = self.load_dataset()  # self.labels => good : 0, anomaly : 1
@@ -208,20 +217,11 @@ class CDODataset(Dataset):
 
     def augment_image(self, image):
 
-        if self.augm_red_type == "noise":
-            noise_amplitude = self.epoch_ratio * 127
-            noise_image = np.random.randint(0 + noise_amplitude, 255 - noise_amplitude, 
-                                            size=image.shape).astype(np.float32) / 255.0
-        else:
-            noise_image = np.random.randint(0, 255, size=image.shape).astype(np.float32) / 255.0
-
-        # generate noise image
-        patch_mask = np.zeros(image.shape[:2], dtype=np.float32)
-
         # get bkg mask
         bkg_msk = self.estimate_background(image)
 
         # generate random mask
+        patch_mask = np.zeros(image.shape[:2], dtype=np.float32)
         patch_number = np.random.randint(0, 5)
         augmented_image = image
 
@@ -256,7 +256,11 @@ class CDODataset(Dataset):
 
             patch_mask[coor_min_dim1:coor_max_dim1, coor_min_dim2:coor_max_dim2] = 1.0
 
-        if self.augm_red_type == "alpha":
+        
+        # generate noise image
+        noise_image = self.noise_gen(self.epoch_ratio)
+
+        if "alpha" in self.augm_red_type:
             alpha = np.power(self.epoch_ratio, 2) * 0.6
             blended_noise = (1 - alpha) * noise_image[patch_mask > 0] + alpha * augmented_image[patch_mask > 0]
             augmented_image[patch_mask > 0] = blended_noise
