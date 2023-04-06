@@ -8,7 +8,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from utils.noise import NOISE_GENERATORS
+from utils.noise import NOISE_GENERATORS, NOISE_POSTPROCESSORS
 
 mean_train = [0.485, 0.456, 0.406]
 std_train = [0.229, 0.224, 0.225]
@@ -154,7 +154,7 @@ class CDODataset(Dataset):
     augm_red_type = ""
 
     def __init__(self, dataset_name, category, input_size, phase,
-                 load_memory=False, perturbed=False, augm_red = {"normal": []}):
+                 load_memory=False, perturbed=False, augm_red = {"normal": {}}):
 
         assert dataset_name in list(load_function_dict.keys())
 
@@ -189,16 +189,24 @@ class CDODataset(Dataset):
         # noise generators
         gen_str = self.augm_red_type.intersection(set(NOISE_GENERATORS.keys()))
         gen = gen_str.pop() if len(gen_str) > 0 else ""
+        self.noise_gen_name = gen
         self.noise_gen = NOISE_GENERATORS[gen](size=self.resize_shape, ch=3)
+        if "controller" in self.augm_red[gen]:
+            controller_args = self.augm_red[gen]["controller_args"]
+            self.noise_gen.setController(self.augm_red[gen]["controller"](*controller_args))
+
+        noise_post_str = self.augm_red_type.intersection(set(NOISE_POSTPROCESSORS.keys()))
+        self.noise_postprocessor = {noise_post: NOISE_POSTPROCESSORS[noise_post](*self.augm_red[noise_post]["args"]) for noise_post in noise_post_str}
+        for noise_post in self.noise_postprocessor:
+            if "controller" in self.augm_red[noise_post]:
+                controller_args = self.augm_red[noise_post]["controller_args"]
+                self.noise_postprocessor[noise_post].setController(self.augm_red[noise_post]["controller"](*controller_args))
 
         # load datasets
         self.img_paths, self.gt_paths, self.labels, self.types = self.load_dataset()  # self.labels => good : 0, anomaly : 1
 
         if self.load_memory:
             self.load_dataset_to_memory()
-    
-    def alpha_fun(self, exp=4.0, max_value=0.6):
-        return np.power(self.epoch_ratio, exp) * max_value
 
     def get_size(self):
         return self.h, self.w
@@ -264,8 +272,7 @@ class CDODataset(Dataset):
         noise_image = self.noise_gen(self.epoch_ratio)
 
         if "alpha" in self.augm_red_type:
-            alpha = self.alpha_fun(*self.augm_red["alpha"])
-            blended_noise = (1 - alpha) * noise_image[patch_mask > 0] + alpha * augmented_image[patch_mask > 0]
+            blended_noise = self.noise_postprocessor["alpha"](self.epoch_ratio, noise_image[patch_mask > 0], augmented_image[patch_mask > 0])
             augmented_image[patch_mask > 0] = blended_noise
         else:
             augmented_image[patch_mask > 0] = noise_image[patch_mask > 0]

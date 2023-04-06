@@ -6,6 +6,7 @@ from datasets.dataset import dataset_classes
 from utils.csv_utils import *
 from utils.metrics import *
 from utils.training_utils import *
+from utils.controller import CONTROLLERS
 
 
 def train_epoch(model: CDOModel, dataloader: DataLoader, optimizer: torch.optim.Optimizer, device: str):
@@ -116,7 +117,9 @@ def main(args):
             train_dataset_inst.epoch_ratio = (epoch / kwargs['num_epochs'])
             loss_sum = train_epoch(model, train_dataloader, optimizer, device)
             tensorboard_logger.add_scalar('loss', loss_sum, epoch)
-            tensorboard_logger.add_scalar('alpha', train_dataset_inst.alpha_fun(), epoch)
+            tensorboard_logger.add_scalar(train_dataset_inst.noise_gen_name, train_dataset_inst.noise_gen.controlled_value, epoch)
+            for k, v in train_dataset_inst.noise_postprocessor.items():
+                tensorboard_logger.add_scalar(f'{k}', v.controlled_value, epoch)
 
             if epoch % kwargs['validation_epoch'] == 0 or epoch == kwargs['num_epochs'] - 1:
 
@@ -161,23 +164,29 @@ def main(args):
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
-class DictOfListAction(argparse.Action):
+class AugmRedDictAction(argparse.Action):
     
     custom_choices = ['amp', 'alpha', 'freq', 'normal']
 
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, {})
         current_arg = None
+        last_kw = None
         for value in values:
             if value in self.custom_choices:
                 current_arg = value
-                getattr(namespace, self.dest)[value] = []
+                last_kw = "args"
+                getattr(namespace, self.dest)[value] = {"args": []}
+            elif value in CONTROLLERS:
+                last_kw = "controller_args"
+                getattr(namespace, self.dest)[current_arg]["controller"] = CONTROLLERS[value]
+                getattr(namespace, self.dest)[current_arg]["controller_args"] = []
             elif current_arg is not None:
                 try:
                     value = float(value)
                 except ValueError:
                     pass
-                getattr(namespace, self.dest)[current_arg].append(value)
+                getattr(namespace, self.dest)[current_arg][last_kw].append(value)
             else:
                 raise ValueError(f'Invalid value: {value}')
 
@@ -206,7 +215,7 @@ def get_args():
     parser.add_argument("--backbone", type=str, default="hrnet32",
                         choices=['resnet18', 'resnet34', 'resnet50', 'wide_resnet50_2', 'hrnet18', 'hrnet32',
                                  'hrnet48'])
-    parser.add_argument("--augm-red", nargs='+', type=str, action=DictOfListAction, default="normal")
+    parser.add_argument("--augm-red", nargs='+', type=str, action=AugmRedDictAction, default="normal")
     parser.add_argument("--MOM", type=str2bool, default=True)
     parser.add_argument("--OOM", type=str2bool, default=True)
     parser.add_argument("--gamma", type=float, default=2.)
