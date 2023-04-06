@@ -154,7 +154,7 @@ class CDODataset(Dataset):
     augm_red_type = ""
 
     def __init__(self, dataset_name, category, input_size, phase,
-                 load_memory=False, perturbed=False, augm_red = [""]):
+                 load_memory=False, perturbed=False, augm_red = {"normal": []}):
 
         assert dataset_name in list(load_function_dict.keys())
 
@@ -162,8 +162,8 @@ class CDODataset(Dataset):
         self.skip_bkg = SKIP_BACKGROUND[dataset_name][category]
         self.phase = phase
         self.perturbed = perturbed
-        augm_red = set(augm_red)
-        self.augm_red_type = augm_red
+        self.augm_red = augm_red
+        self.augm_red_type = set(augm_red.keys())
 
         if phase == 'test':
             self.perturbed = False
@@ -187,7 +187,7 @@ class CDODataset(Dataset):
         self.w = input_size
 
         # noise generators
-        gen_str = augm_red.intersection(set(NOISE_GENERATORS.keys()))
+        gen_str = self.augm_red_type.intersection(set(NOISE_GENERATORS.keys()))
         gen = gen_str.pop() if len(gen_str) > 0 else ""
         self.noise_gen = NOISE_GENERATORS[gen](size=self.resize_shape, ch=3)
 
@@ -197,8 +197,8 @@ class CDODataset(Dataset):
         if self.load_memory:
             self.load_dataset_to_memory()
     
-    def alpha_fun(self):
-        return np.power(self.epoch_ratio, 4) * 0.8
+    def alpha_fun(self, exp=4.0, max_value=0.6):
+        return np.power(self.epoch_ratio, exp) * max_value
 
     def get_size(self):
         return self.h, self.w
@@ -264,7 +264,7 @@ class CDODataset(Dataset):
         noise_image = self.noise_gen(self.epoch_ratio)
 
         if "alpha" in self.augm_red_type:
-            alpha = self.alpha_fun()
+            alpha = self.alpha_fun(*self.augm_red["alpha"])
             blended_noise = (1 - alpha) * noise_image[patch_mask > 0] + alpha * augmented_image[patch_mask > 0]
             augmented_image[patch_mask > 0] = blended_noise
         else:

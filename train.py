@@ -161,6 +161,25 @@ def main(args):
 def str2bool(v):
     return v.lower() in ("yes", "true", "t", "1")
 
+class DictOfListAction(argparse.Action):
+    
+    custom_choices = ['amp', 'alpha', 'freq', 'normal']
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, {})
+        current_arg = None
+        for value in values:
+            if value in self.custom_choices:
+                current_arg = value
+                getattr(namespace, self.dest)[value] = []
+            elif current_arg is not None:
+                try:
+                    value = float(value)
+                except ValueError:
+                    pass
+                getattr(namespace, self.dest)[current_arg].append(value)
+            else:
+                raise ValueError(f'Invalid value: {value}')
 
 def get_args():
     parser = argparse.ArgumentParser(description='Anomaly detection')
@@ -187,7 +206,7 @@ def get_args():
     parser.add_argument("--backbone", type=str, default="hrnet32",
                         choices=['resnet18', 'resnet34', 'resnet50', 'wide_resnet50_2', 'hrnet18', 'hrnet32',
                                  'hrnet48'])
-    parser.add_argument("--augm-red", nargs='+', type=str, default="", choices=['amp', 'alpha', 'freq', ''])
+    parser.add_argument("--augm-red", nargs='+', type=str, action=DictOfListAction, default="normal")
     parser.add_argument("--MOM", type=str2bool, default=True)
     parser.add_argument("--OOM", type=str2bool, default=True)
     parser.add_argument("--gamma", type=float, default=2.)
