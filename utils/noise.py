@@ -85,7 +85,7 @@ class NoiseByAmplitude:
 
 @Controllable()
 class NoiseBlending:
-    def __init__(self, exp, max_value) -> None:
+    def __init__(self, exp=4, max_value=0.6) -> None:
         self.exp = exp
         self.max_value = max_value
 
