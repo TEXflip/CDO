@@ -21,6 +21,17 @@ class RandomController(Controller):
     def compute(self, t):
         return np.random.rand()
 
+class MeanRandomGaussianController(Controller):
+    """
+    gaussian random controller with mean increasing linearly
+    """
+    def __init__(self, std=0.1):
+        super().__init__()
+        self.std = std
+
+    def compute(self, t):
+        return np.clip(np.random.normal(t, self.std), 0, 1)
+
 class LinearStepController(Controller):
     """
     linear step controller, from 0 to 1, in steps
