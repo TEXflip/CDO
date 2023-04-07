@@ -117,9 +117,9 @@ def main(args):
             train_dataset_inst.epoch_ratio = (epoch / kwargs['num_epochs'])
             loss_sum = train_epoch(model, train_dataloader, optimizer, device)
             tensorboard_logger.add_scalar('loss', loss_sum, epoch)
-            tensorboard_logger.add_scalar(train_dataset_inst.noise_gen_name, train_dataset_inst.noise_gen.controlled_value, epoch)
+            tensorboard_logger.add_scalar(train_dataset_inst.noise_gen_name, train_dataset_inst.noise_gen.value, epoch)
             for k, v in train_dataset_inst.noise_postprocessor.items():
-                tensorboard_logger.add_scalar(f'{k}', v.controlled_value, epoch)
+                tensorboard_logger.add_scalar(f'{k}', v.value, epoch)
 
             if epoch % kwargs['validation_epoch'] == 0 or epoch == kwargs['num_epochs'] - 1:
 

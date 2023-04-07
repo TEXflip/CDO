@@ -23,6 +23,7 @@ class Noise:
     def __init__(self, size, ch=3):
         self.size = size[:2]
         self.ch = ch
+        self.value = -1
     
     def __call__(self, *args) -> np.ndarray:
         return np.random.randint(0, 255, size=(*self.size, self.ch)).astype(np.float32) / 255.0
@@ -36,6 +37,7 @@ class NoiseByFrequency:
         h , w = size[:2]
         self.center = (h//2  , w//2)
         self.order = order
+        self.value = -1
 
         exponent = np.log2(min(h, w))
         self.radius_fun = lambda freq: np.power(2, exponent * freq) # mapping from [0, 1] to [1, size] in log scale
@@ -48,6 +50,7 @@ class NoiseByFrequency:
         :param freq: frequency, from 0 to 1
         """
         radius = self.radius_fun(1 - args[0]) # mapping from [0, 1] to [1, 200] in log scale
+        self.value = radius # for visualization
         mask = 1/(1+(np.sqrt(self.mesh[0]**2 + self.mesh[1]**2)/radius)**(2*self.order))
 
         # generate noise in frequency domain, real = module, imag = phase
@@ -74,6 +77,7 @@ class NoiseByAmplitude:
     def __init__(self, size, ch=3) -> None:
         self.size = size[:2]
         self.ch = ch
+        self.value = -1
 
     def __call__(self, *args) -> np.ndarray:
         """
@@ -81,6 +85,7 @@ class NoiseByAmplitude:
         :param amplitude: [0, 1]
         """
         noise_amplitude = args[0] * 127
+        self.value = noise_amplitude
         return np.random.randint(0 + noise_amplitude, 255 - noise_amplitude, size=(*self.size, self.ch)).astype(np.float32) / 255.0
 
 @Controllable()
@@ -88,12 +93,14 @@ class NoiseBlending:
     def __init__(self, exp=4, max_value=0.6) -> None:
         self.exp = exp
         self.max_value = max_value
+        self.value = -1
 
     def alpha_fun(self, t):
         return np.power(t, self.exp) * self.max_value
     
     def __call__(self, *args) -> np.ndarray:
         alpha = self.alpha_fun(args[0])
+        self.value = alpha
         return (1 - alpha) * args[1] + alpha * args[2]
 
 NOISE_GENERATORS = {
