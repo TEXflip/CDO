@@ -1,5 +1,3 @@
-import sys 
-sys.path.append('.')
 import numpy as np
 
 class Controller:
@@ -12,6 +10,16 @@ class Controller:
     def compute(self, t):
         return t
 
+
+class RandomController(Controller):
+    """
+    random controller, from 0 to 1
+    """
+    def __init__(self, *args):
+        super().__init__()
+
+    def compute(self, t):
+        return np.random.rand()
 
 class LinearStepController(Controller):
     """
