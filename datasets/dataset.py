@@ -188,17 +188,17 @@ class CDODataset(Dataset):
 
         # noise generators
         gen_str = self.augm_red_type.intersection(set(NOISE_GENERATORS.keys()))
-        gen = gen_str.pop() if len(gen_str) > 0 else ""
+        gen = gen_str.pop() if len(gen_str) > 0 else "normal"
         self.noise_gen_name = gen
         self.noise_gen = NOISE_GENERATORS[gen](size=self.resize_shape, ch=3)
-        if "controller" in self.augm_red[gen]:
+        if "controller" in self.augm_red.get(gen, ""):
             controller_args = self.augm_red[gen]["controller_args"]
             self.noise_gen.setController(self.augm_red[gen]["controller"](*controller_args))
 
         noise_post_str = self.augm_red_type.intersection(set(NOISE_POSTPROCESSORS.keys()))
         self.noise_postprocessor = {noise_post: NOISE_POSTPROCESSORS[noise_post](*self.augm_red[noise_post]["args"]) for noise_post in noise_post_str}
         for noise_post in self.noise_postprocessor:
-            if "controller" in self.augm_red[noise_post]:
+            if "controller" in self.augm_red.get(noise_post, ""):
                 controller_args = self.augm_red[noise_post]["controller_args"]
                 self.noise_postprocessor[noise_post].setController(self.augm_red[noise_post]["controller"](*controller_args))
 
