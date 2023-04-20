@@ -215,7 +215,7 @@ def get_args():
     parser.add_argument("--backbone", type=str, default="hrnet32",
                         choices=['resnet18', 'resnet34', 'resnet50', 'wide_resnet50_2', 'hrnet18', 'hrnet32',
                                  'hrnet48'])
-    parser.add_argument("--augm-red", nargs='+', type=str, action=AugmRedDictAction, default="normal")
+    parser.add_argument("--augm-red", nargs='+', type=str, action=AugmRedDictAction, default={"normal": {}})
     parser.add_argument("--MOM", type=str2bool, default=True)
     parser.add_argument("--OOM", type=str2bool, default=True)
     parser.add_argument("--gamma", type=float, default=2.)
