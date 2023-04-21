@@ -1,8 +1,11 @@
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/collaborative-discrepancy-optimization-for-1/anomaly-detection-on-mvtec-ad)](https://paperswithcode.com/sota/anomaly-detection-on-mvtec-ad?p=collaborative-discrepancy-optimization-for-1)
-[![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/collaborative-discrepancy-optimization-for-1/anomaly-detection-on-mvtec-3d-ad-1)](https://paperswithcode.com/sota/anomaly-detection-on-mvtec-3d-ad-1?p=collaborative-discrepancy-optimization-for-1)
+# Implementing curriculurm learning for anomaly detection
+
+this fork implements different form of curriculurm learning in CDO for images, other than fixing some bug and adding the compatibility to more recent libraries.
+
 
 ## Collaborative Discrepancy Optimization for Reliable Image Anomaly Localization
 [IEEE Transactions on Industrial Informatics 2023](https://ieeexplore.ieee.org/document/10034849)
+
 
 ## Abstract
 Most unsupervised image anomaly localization methods suffer from overgeneralization because of the high generalization abilities of convolutional neural networks, leading to unreliable predictions. To mitigate the overgeneralization, this study proposes to collaboratively optimize normal and abnormal feature distributions with the assistance of synthetic anomalies, namely collaborative discrepancy optimization (CDO). CDO introduces a margin optimization module and an overlap optimization module to optimize the two key factors determining the localization performance, i.e. , the margin and the overlap between the discrepancy distributions (DDs) of normal and abnormal samples. With CDO, a large margin and a small overlap between normal and abnormal DDs are obtained, and the prediction reliability is boosted. Experiments on MVTec2D and MVTec3D show that CDO effectively mitigates the overgeneralization and achieves great anomaly localization performance with real-time computation efficiency. A real-world automotive plastic parts inspection application further demonstrates the capability of the proposed CDO.
@@ -22,8 +25,9 @@ If you like our [paper](https://ieeexplore.ieee.org/document/10034849) or code, 
 ```
 
 ## Installation
-- Clone this repository: tested on Python 3.7
-- Install [PyTorch](http://pytorch.org/): tested on v1.7
+- Clone this repository: tested on Python 3.11
+- create and/or activate a new python environment: `python3 -m venv .venv; source .venv/bin/activate`
+- `python3 -m pip install -r requirements.txt`
 
 
 ## Datasets
