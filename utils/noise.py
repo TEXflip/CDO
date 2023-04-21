@@ -113,3 +113,39 @@ NOISE_GENERATORS = {
 NOISE_POSTPROCESSORS = {
     'alpha': NoiseBlending
 }
+
+if "__main__" == __name__:
+    from PIL import Image
+    import yaml
+    import os
+
+    os.mkdir('noise_generation')
+
+    for noise_gen in ['freq', 'amp', 'normal']:
+        noise = NOISE_GENERATORS[noise_gen]((256, 256))
+        
+        img = noise(0)
+        Image.fromarray((img * 255).astype(np.uint8)).save(f'noise_generation/{noise_gen}_0.png')
+        img = noise(0.5)
+        Image.fromarray((img * 255).astype(np.uint8)).save(f'noise_generation/{noise_gen}_0.5.png')
+        img = noise(1)
+        Image.fromarray((img * 255).astype(np.uint8)).save(f'noise_generation/{noise_gen}_1.png')
+    
+    # load image from dataset
+    conf = yaml.safe_load(open('../config.yaml', 'r'))
+    path = os.path.join(conf['DATA_ROOT'], conf['MVTEC2D_DIR'])
+    img = np.array(Image.open(os.path.join(path, 'cable', 'train', 'good', '00000.png')))
+    patch_mask = np.zeros(img.shape[:2], dtype=np.float32)
+    patch_mask[50:100, 80:150] = 1.0
+    noise_patch = Noise((256, 256))(0)[patch_mask > 0]
+
+    for noise_post in ['alpha']:
+        noise = NOISE_POSTPROCESSORS[noise_post]()
+
+        img = noise(0, np.zeros((256, 256, 3)), np.ones((256, 256, 3)))
+        Image.fromarray((img * 255).astype(np.uint8)).save(f'noise_generation/{noise_post}_0.png')
+        img = noise(0.5, np.zeros((256, 256, 3)), np.ones((256, 256, 3)))
+        Image.fromarray((img * 255).astype(np.uint8)).save(f'noise_generation/{noise_post}_0.5.png')
+        img = noise(1, np.zeros((256, 256, 3)), np.ones((256, 256, 3)))
+        Image.fromarray((img * 255).astype(np.uint8)).save(f'noise_generation/{noise_post}_1.png')
+        
