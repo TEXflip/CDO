@@ -210,7 +210,7 @@ class NoiseSelector:
         augmented_image = img
         if gene[1]:
             blended_noise = NoiseSelector.noise_postprocessors[gene[1]-1](1, noise, img)
-            augmented_image[patch_mask > 0] = blended_noise
+            augmented_image[patch_mask > 0] = blended_noise[patch_mask > 0]
         else:
             augmented_image[patch_mask > 0] = noise[patch_mask > 0]
         return augmented_image
