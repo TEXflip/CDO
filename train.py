@@ -120,8 +120,9 @@ def main(args):
                 NoiseSelector.step(loss_sum)
                 tensorboard_logger.add_scalar('noise generator', NoiseSelector.genotype_trajectory[-1][0], epoch)
                 tensorboard_logger.add_scalar('noise postprocessor', NoiseSelector.genotype_trajectory[-1][1], epoch)
+            else:
+                tensorboard_logger.add_scalar(train_dataset_inst.noise_gen_name, train_dataset_inst.noise_gen.value, epoch)
             tensorboard_logger.add_scalar('loss', loss_sum, epoch)
-            tensorboard_logger.add_scalar(train_dataset_inst.noise_gen_name, train_dataset_inst.noise_gen.value, epoch)
             for k, v in train_dataset_inst.noise_postprocessor.items():
                 tensorboard_logger.add_scalar(f'{k}', v.value, epoch)
 
