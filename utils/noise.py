@@ -128,6 +128,7 @@ class NoiseSelector:
     loss_trajectory = []
     selection_trajectory = []
     genotype_trajectory = []
+    init = 1
 
     @staticmethod
     def reset(size, ch=3):
@@ -135,13 +136,15 @@ class NoiseSelector:
         NoiseSelector.loss_trajectory = []
         NoiseSelector.selection_trajectory = []
 
-        for g in NoiseSelector.noise_generators:
-            g = NOISE_GENERATORS[g](size, ch)
-            g.setController(controllers.RandomController())
+        if NoiseSelector.init:
+            for i in range(len(NoiseSelector.noise_generators)):
+                NoiseSelector.noise_generators[i] = NoiseSelector.noise_generators[i](size, ch)
+                NoiseSelector.noise_generators[i].setController(controllers.RandomController())
 
-        for p in NoiseSelector.noise_postprocessors:
-            p = NOISE_POSTPROCESSORS[p]()
-            p.setController(controllers.RandomController())
+            for i in range(len(NoiseSelector.noise_postprocessors)):
+                NoiseSelector.noise_postprocessors[i] = NoiseSelector.noise_postprocessors[i]()
+                NoiseSelector.noise_postprocessors[i].setController(controllers.RandomController())
+            NoiseSelector.init = 0
         
         # first gene is the noise generator
         # second gene is the postprocessor (0 = off), otherwise i-1 of the postprocessor
@@ -203,13 +206,14 @@ class NoiseSelector:
     @staticmethod
     def augment(img, patch_mask):
         gene = NoiseSelector.genotype_trajectory[-1]
-        noise = NoiseSelector.noise_generators[gene[0]]()
+        noise = NoiseSelector.noise_generators[gene[0]](0)
         augmented_image = img
         if gene[1]:
             blended_noise = NoiseSelector.noise_postprocessors[gene[1]-1](1, noise, img)
             augmented_image[patch_mask > 0] = blended_noise
         else:
             augmented_image[patch_mask > 0] = noise[patch_mask > 0]
+        return augmented_image
 
 if "__main__" == __name__:
     from PIL import Image

@@ -189,7 +189,7 @@ class CDODataset(Dataset):
 
         # noise generators
         if self.NoiseSelector:
-            NoiseSelector.reset()
+            NoiseSelector.reset(size=self.resize_shape, ch=3)
         else:
             self.augm_red_type = set(augm_red.keys())
             gen_str = self.augm_red_type.intersection(set(NOISE_GENERATORS.keys()))
