@@ -180,7 +180,7 @@ class NoiseSelector:
             return
         
         # log polynomial fitting of the loss trajectory
-        traj = NoiseSelector.loss_trajectory
+        traj = np.array(NoiseSelector.loss_trajectory)
         x_size = len(traj)
         x = np.arange(x_size)
         # find the point c of -log(a, x) + c
