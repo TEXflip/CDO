@@ -15,6 +15,8 @@ def reorder_list(list1, list2):
 
 parser = argparse.ArgumentParser(description='Compare the runs')
 parser.add_argument('--logdir', type=str, default='logs', help='log directory')
+parser.add_argument('-o', '--output', type=str, default='./result/comparison/table.png', help='output path e.g.: ./result/comparison/table.png')
+parser.add_argument('--peak', action='store_true', help='use peak value instead of mean of the last 5 values')
 args = parser.parse_args()
 
 scalars_to_compare = ['i_roc', 'p_roc', 'p_pro', 'loss']
@@ -60,11 +62,13 @@ for tf_event in glob.glob(args.logdir + '/**/events.out.tfevents.*', recursive=T
 		scalars_to_compare_idx = scalars_to_compare_map[scalar_key]
 		scalars = ea.Scalars(scalar_key)
 
-		if 'loss' in scalar_key:
-			comp_value = np.array([x.value for x in scalars]).min()
+		if args.peak:
+			if 'loss' in scalar_key:
+				comp_value = np.array([x.value for x in scalars]).min()
+			else:
+				comp_value = np.array([x.value for x in scalars]).max()
 		else:
-			comp_value = np.array([x.value for x in scalars]).max()
-		# comp_value = np.array([x.value for x in scalars])[-5:].mean()
+			comp_value = np.array([x.value for x in scalars])[-5:].mean()
 
 		values[exp_type_idx][dataset_idx][scalars_to_compare_idx] = comp_value
 
@@ -106,12 +110,21 @@ for ax, title in zip(axs, scalars_to_compare):
 			if np.linalg.norm(np.array(cell.get_facecolor()), 2) < 1.2:
 				cell.set_text_props(color='whitesmoke')
 
-save_dir = os.path.join(args.logdir, "comparison", "table.png")
+
+# ==================== save figure ====================
+
+in_path = Path(args.output).resolve()
+
+save_dir = in_path.parent
+save_dir.mkdir(parents=True, exist_ok=True)
+save_path = os.path.join(args.logdir, save_dir, in_path.name)
+file_name = in_path.stem
+file_ext = in_path.suffix
 
 i = 1
-while os.path.exists(save_dir):
-	save_dir = os.path.join(args.logdir, "comparison", f"table_{i}.png")
+while os.path.exists(save_path):
+	save_path = os.path.join(args.logdir, save_dir, f"{file_name}_{i}{file_ext}")
 	i += 1
 
-plt.savefig(save_dir)
+plt.savefig(save_path)
 
