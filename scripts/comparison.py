@@ -15,6 +15,7 @@ def reorder_list(list1, list2):
 
 parser = argparse.ArgumentParser(description='Compare the runs')
 parser.add_argument('--logdir', type=str, default='logs', help='log directory')
+parser.add_argument('--usemax', action='store_true', help='use max value instead of last 5 average')
 
 args = parser.parse_args()
 
@@ -26,10 +27,10 @@ exp_types = set()
 
 for tf_event in glob.glob(args.logdir + '/**/events.out.tfevents.*', recursive=True):
 	ea = event_accumulator.EventAccumulator(tf_event)
-	file_path = Path(tf_event)
+	file_path = Path(tf_event).relative_to(args.logdir)
 	dataset = file_path.parent.name
 	datasets.add(dataset)
-	exp_type = file_path.parts[1]
+	exp_type = file_path.parts[0]
 	exp_types.add(exp_type)
 
 datasets = list(sorted(datasets)) + ["average"]
@@ -43,9 +44,9 @@ values = np.zeros((len(exp_types), len(datasets), len(scalars_to_compare))) - 1
 
 for tf_event in glob.glob(args.logdir + '/**/events.out.tfevents.*', recursive=True):
 	ea = event_accumulator.EventAccumulator(tf_event)
-	file_path = Path(tf_event)
+	file_path = Path(tf_event).relative_to(args.logdir)
 	dataset_idx = datasets_map[file_path.parent.name]
-	exp_type_idx = exp_types_map[file_path.parts[1]]
+	exp_type_idx = exp_types_map[file_path.parts[0]]
 
 	ea.Reload() # loads events from file
 	tags = ea.Tags() # print available tags
@@ -60,8 +61,10 @@ for tf_event in glob.glob(args.logdir + '/**/events.out.tfevents.*', recursive=T
 		if 'loss' in scalar_key:
 			comp_value = np.array([x.value for x in scalars]).min()
 		else:
-			comp_value = np.array([x.value for x in scalars]).max()
-		# comp_value = np.array([x.value for x in scalars])[-5:].mean()
+			if args.usemax:
+				comp_value = np.array([x.value for x in scalars]).max()
+			else:
+				comp_value = np.array([x.value for x in scalars])[-5:].mean() # paper way
 
 		values[exp_type_idx][dataset_idx][scalars_to_compare_idx] = comp_value
 
@@ -71,11 +74,12 @@ for v in values:
 
 # create table with colored cells for max values
 n_rows = len(scalars_to_compare)
-fig, axs = plt.subplots(n_rows, 1, figsize=(12, 3.3 * n_rows), dpi=300)
+fig, axs = plt.subplots(n_rows, 1, figsize=(10, 3.55 * n_rows), dpi=300)
 
 for ax, title in zip(axs, scalars_to_compare):
 	ax.axis('off')
-	ax.set_title(title, fontsize=20)
+	ax_title = ax.set_title(title, fontsize=20)
+	ax_title.set_y(1.5)
 	i = scalars_to_compare_map[title]
 	values_formatted = np.char.mod('%.2f', values[:,:,i])
 	values_formatted = np.where(values[:,:,i] == -1, '--', values_formatted)
@@ -94,20 +98,26 @@ for ax, title in zip(axs, scalars_to_compare):
 		cellColours=plt.cm.viridis(norm_v),
 		loc='center',
 		cellLoc='center',
-		fontsize=20,
+		bbox=[0.35, 0, 0.8, 1]
 	)
+	table.set_fontsize(25)
 	for row in range(values.shape[0]):
 		for col in range(values.shape[1]):
 			cell = table.get_celld()[row+1, col]
 			# set white text for dark cells
 			if np.linalg.norm(np.array(cell.get_facecolor()), 2) < 1.2:
 				cell.set_text_props(color='whitesmoke')
+	for key, cell in table.get_celld().items():
+		cell.set_linewidth(0.2)
 
-save_dir = os.path.join(args.logdir, "comparison", "table.png")
+ext = ".eps"
+tabletype = "max" if args.usemax else "last5avg"
+filename = f"table_{tabletype}"
+save_dir = os.path.join(args.logdir, "comparison", f"{filename}{ext}")
 
 i = 1
 while os.path.exists(save_dir):
-	save_dir = os.path.join(args.logdir, "comparison", f"table_{i}.png")
+	save_dir = os.path.join(args.logdir, "comparison", f"{filename}_{i}{ext}")
 	i += 1
 
 plt.savefig(save_dir)

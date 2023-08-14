@@ -9,11 +9,11 @@ def noise_fft(radius, size=(200, 200), order=2):
 	mesh = np.meshgrid(np.arange(r) - cr, np.arange(c) - cc)
 	mask = 1/(1+(np.sqrt(mesh[0]**2 + mesh[1]**2)/radius)**(2*order))
 
-	real = np.random.normal(0, sigma, size=(200, 200, 3))
+	real = np.random.normal(0, sigma, size=(size[0], size[1], 3))
 	# imag = np.random.normal(0, sigma, size=(200, 200, 3))
 	fshift = np.vectorize(complex)(real, real)
 	fshift[cr, cc] = np.vectorize(complex)(np.ones(3) * (size[0] * size[1] * 127.5), np.zeros(3))
-	fshift = fshift * mask.reshape((200, 200, 1))
+	fshift = fshift * mask.reshape((size[0], size[1], 1))
 
 	f_ishift = np.fft.ifftshift(fshift, axes=(0, 1))
 	img_back = np.fft.ifft2(f_ishift, axes=(0, 1))
@@ -55,10 +55,11 @@ def create_video(size=(200, 200)):
 	# video_writer.release()
 	# cv2.destroyAllWindows()
 
-img, mask = noise_fft(200, (200, 200))
+# img, mask = noise_fft(1024, (1024, 1024))
+img = np.random.randint(0, 255, size=(100, 100, 3), dtype=np.uint8)
 Image.fromarray(img).save("noise1.png")
-img, mask = noise_fft(10, (200, 200))
-Image.fromarray(img).save("noise2.png")
+# img, mask = noise_fft(10, (200, 200))
+# Image.fromarray(img).save("noise2.png")
 # create_video()
 # import matplotlib.pyplot as plt
 # noise_image = np.random.randint(0, 255, size=(200, 200, 3), dtype=np.uint8)
