@@ -74,12 +74,15 @@ for v in values:
 
 # create table with colored cells for max values
 n_rows = len(scalars_to_compare)
-fig, axs = plt.subplots(n_rows, 1, figsize=(10, 3.55 * n_rows), dpi=300)
+fig, axs = plt.subplots(n_rows, 1, figsize=(10, 3.3 * n_rows), dpi=300)
+fig.tight_layout()
+
+cell_font = 9
 
 for ax, title in zip(axs, scalars_to_compare):
 	ax.axis('off')
-	ax_title = ax.set_title(title, fontsize=20)
-	ax_title.set_y(1.5)
+	ax_title = ax.set_title(title, fontsize=16)
+	ax_title.set_y(1.4)
 	i = scalars_to_compare_map[title]
 	values_formatted = np.char.mod('%.2f', values[:,:,i])
 	values_formatted = np.where(values[:,:,i] == -1, '--', values_formatted)
@@ -91,6 +94,9 @@ for ax, title in zip(axs, scalars_to_compare):
 	norm_v = values[:,:,i] - (min_v)
 	norm_v = norm_v / (norm_v.max(axis=0)[None, :] + 1e-10)
 	norm_v = 1 - norm_v if 'loss' in title else norm_v
+	# col_widths = [1] * len(datasets)
+	# col_widths[0] = 10
+	# col_widths = np.array(col_widths) / sum(col_widths)
 	table = ax.table(
 		cellText=values_formatted,
 		rowLabels=exp_types,
@@ -98,17 +104,38 @@ for ax, title in zip(axs, scalars_to_compare):
 		cellColours=plt.cm.viridis(norm_v),
 		loc='center',
 		cellLoc='center',
-		bbox=[0.35, 0, 0.8, 1]
+		bbox=[0.15, 0, 0.85, 1],
+		# colWidths=col_widths,
 	)
-	table.set_fontsize(25)
+	table.auto_set_font_size(False)
+	table.set_fontsize(cell_font)
 	for row in range(values.shape[0]):
 		for col in range(values.shape[1]):
 			cell = table.get_celld()[row+1, col]
 			# set white text for dark cells
 			if np.linalg.norm(np.array(cell.get_facecolor()), 2) < 1.2:
 				cell.set_text_props(color='whitesmoke')
+		
 	for key, cell in table.get_celld().items():
 		cell.set_linewidth(0.2)
+	# for x in range(1, len(dataset)+1):
+	# 	table.get_celld()[(x,-1)]._loc = 'right'
+	# table.properties()["children"][0].set_fontsize(6)
+	# if title == "i_roc":
+	# 	for cell in table.properties()["children"]:
+	# 		print(cell)
+
+	table[(0, 2)].get_text().set_fontsize(cell_font * 0.937)
+	table[(0, 5)].get_text().set_fontsize(cell_font * 0.75)
+	table[(0, 6)].get_text().set_fontsize(cell_font * 0.875)
+	table[(0, 7)].get_text().set_fontsize(cell_font * 0.75)
+	table[(0, 11)].get_text().set_fontsize(cell_font * 0.687)
+	table[(0, 12)].get_text().set_fontsize(cell_font * 0.75)
+	table[(0, 15)].get_text().set_fontsize(cell_font * 0.875)
+
+	for i in range(len(dataset)):
+		table.properties()["children"][(i*-1)-1].set_width(0.1)
+
 
 ext = ".eps"
 tabletype = "max" if args.usemax else "last5avg"

@@ -2,6 +2,20 @@ import numpy as np
 from PIL import Image
 import cv2
 
+class NoiseBlending:
+    def __init__(self, exp=1, max_value=1) -> None:
+        self.exp = exp
+        self.max_value = max_value
+        self.value = -1
+
+    def alpha_fun(self, t):
+        return np.power(t, self.exp) * self.max_value
+    
+    def __call__(self, *args) -> np.ndarray:
+        alpha = self.alpha_fun(args[0])
+        self.value = alpha
+        return (1 - alpha) * args[1] + alpha * args[2]
+
 def noise_fft(radius, size=(200, 200), order=2):
 	sigma = 10500
 	r, c = size
@@ -56,8 +70,14 @@ def create_video(size=(200, 200)):
 	# cv2.destroyAllWindows()
 
 # img, mask = noise_fft(1024, (1024, 1024))
-img = np.random.randint(0, 255, size=(100, 100, 3), dtype=np.uint8)
-Image.fromarray(img).save("noise1.png")
+img_noise = np.random.randint(0, 255, size=(100, 100, 3), dtype=np.uint8)
+img_bg = np.zeros((100, 100, 3), dtype=np.uint8)
+img0 = NoiseBlending()(0, img_noise, img_bg).astype(np.uint8)
+img1 = NoiseBlending()(0.5, img_noise, img_bg).astype(np.uint8)
+img2 = NoiseBlending()(1, img_noise, img_bg).astype(np.uint8)
+Image.fromarray(img0).save("im0.png")
+Image.fromarray(img1).save("im1.png")
+Image.fromarray(img2).save("im2.png")
 # img, mask = noise_fft(10, (200, 200))
 # Image.fromarray(img).save("noise2.png")
 # create_video()
