@@ -169,7 +169,7 @@ class CDODataset(Dataset):
             self.perturbed = False
 
         self.transform = transforms.Compose([
-            transforms.Resize((input_size, input_size), Image.ANTIALIAS),
+            transforms.Resize((input_size, input_size), Image.LANCZOS),
             transforms.CenterCrop(input_size),
             transforms.ToTensor(),
             transforms.Normalize(mean=mean_train,
