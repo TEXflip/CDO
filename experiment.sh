@@ -1,0 +1,12 @@
+# python train.py --gpu-id 0 --dataset mvtec2d --class-name cable --backbone hrnet32 --MOM True --OOM True --gamma 2. --domain-augm translation --domain-augm-args 0.5 --root-dir ./translation_0.5
+# python train.py --gpu-id 0 --dataset mvtec2d --class-name cable --backbone hrnet32 --MOM True --OOM True --gamma 2. --domain-augm translation --domain-augm-args 1.0 --root-dir ./translation_1
+# python train.py --gpu-id 0 --dataset mvtec2d --class-name cable --backbone hrnet32 --MOM True --OOM True --gamma 2. --domain-augm rotation --root-dir ./rotation
+# python train.py --gpu-id 0 --dataset mvtec2d --class-name cable --backbone hrnet32 --MOM True --OOM True --gamma 2. --domain-augm flip --root-dir ./flip
+# python train.py --gpu-id 0 --dataset mvtec2d --class-name cable --backbone hrnet32 --MOM True --OOM True --gamma 2. --domain-augm translation rotation flip --domain-augm-args 1.0 --root-dir ./mixed
+python train.py --gpu-id 0 --dataset mvtec2d --class-name leather --backbone hrnet32 --MOM True --OOM True --gamma 2. --domain-augm translation --domain-augm-args 0.1 --root-dir ./translation_0.1
+python train.py --gpu-id 0 --dataset mvtec2d --class-name leather --backbone hrnet32 --MOM True --OOM True --gamma 2. --domain-augm translation --domain-augm-args 0.2 --root-dir ./translation_0.2
+python train.py --gpu-id 0 --dataset mvtec2d --class-name leather --backbone hrnet32 --MOM True --OOM True --gamma 2. --domain-augm translation --domain-augm-args 0.5 --root-dir ./translation_0.5
+python train.py --gpu-id 0 --dataset mvtec2d --class-name leather --backbone hrnet32 --MOM True --OOM True --gamma 2. --domain-augm translation --domain-augm-args 1.0 --root-dir ./translation_1
+python train.py --gpu-id 0 --dataset mvtec2d --class-name leather --backbone hrnet32 --MOM True --OOM True --gamma 2. --domain-augm rotation --root-dir ./rotation
+python train.py --gpu-id 0 --dataset mvtec2d --class-name leather --backbone hrnet32 --MOM True --OOM True --gamma 2. --domain-augm flip --root-dir ./flip
+python train.py --gpu-id 0 --dataset mvtec2d --class-name leather --backbone hrnet32 --MOM True --OOM True --gamma 2. --domain-augm translation rotation flip --domain-augm-args 1.0 --root-dir ./mixed

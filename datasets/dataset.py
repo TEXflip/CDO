@@ -154,7 +154,8 @@ class CDODataset(Dataset):
     augm_red_type = ""
 
     def __init__(self, dataset_name, category, input_size, phase,
-                 load_memory=False, perturbed=False, augm_red = {"normal": {}}):
+                 load_memory=False, perturbed=False, augm_red = {"normal": {}},
+                  domain_augm="", domain_augm_args=[]):
 
         assert dataset_name in list(load_function_dict.keys())
 
@@ -164,6 +165,8 @@ class CDODataset(Dataset):
         self.perturbed = perturbed
         self.augm_red = augm_red
         self.augm_red_type = set(augm_red.keys())
+        self.domain_augm = domain_augm
+        self.domain_augm_args = domain_augm_args
 
         if phase == 'test':
             self.perturbed = False
@@ -225,6 +228,24 @@ class CDODataset(Dataset):
 
         bkg_msk = bkg_msk.astype(np.float32)
         return bkg_msk
+    
+    def augment_domain(self, image):
+        if "translation" in self.domain_augm:
+            t = float(self.domain_augm_args[0]) if len(self.domain_augm_args) else 0.1
+            rh = np.random.randint(0, int(image.shape[0] * t))
+            rw = np.random.randint(0, int(image.shape[1] * t))
+            image = np.roll(image, rh, axis=0)
+            image = np.roll(image, rw, axis=1)
+        if "rotation" in self.domain_augm:
+            for _ in range(np.random.randint(1, 4)):
+                image = np.rot90(image)
+        if "flip" in self.domain_augm:
+            if np.random.rand() < 0.5:
+                image = np.flip(image, axis=0)
+            if np.random.rand() < 0.5:
+                image = np.flip(image, axis=1)
+            # Image.fromarray((image * 255).astype(np.uint8)).save("img.png")
+        return image
 
     def augment_image(self, image):
 
@@ -234,7 +255,7 @@ class CDODataset(Dataset):
         # generate random mask
         patch_mask = np.zeros(image.shape[:2], dtype=np.float32)
         patch_number = np.random.randint(0, 5)
-        augmented_image = image
+        augmented_image = self.augment_domain(image)
 
         MAX_TRY_NUMBER = 200
         for i in range(patch_number):
