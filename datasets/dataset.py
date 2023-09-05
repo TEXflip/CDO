@@ -8,10 +8,11 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision import transforms
 
-from utils.noise import NOISE_GENERATORS, NOISE_POSTPROCESSORS
+from utils.noise import NOISE_GENERATORS, NOISE_POSTPROCESSORS, NoiseSelector
 
 mean_train = [0.485, 0.456, 0.406]
 std_train = [0.229, 0.224, 0.225]
+MAX_TRY_NUMBER = 200
 
 with open('config.yaml', 'r') as f:
     conf = yaml.safe_load(f)
@@ -163,7 +164,7 @@ class CDODataset(Dataset):
         self.phase = phase
         self.perturbed = perturbed
         self.augm_red = augm_red
-        self.augm_red_type = set(augm_red.keys())
+        self.NoiseSelector = "NoiseSelector" in self.augm_red
 
         if phase == 'test':
             self.perturbed = False
@@ -187,20 +188,24 @@ class CDODataset(Dataset):
         self.w = input_size
 
         # noise generators
-        gen_str = self.augm_red_type.intersection(set(NOISE_GENERATORS.keys()))
-        gen = gen_str.pop() if len(gen_str) > 0 else "normal"
-        self.noise_gen_name = gen
-        self.noise_gen = NOISE_GENERATORS[gen](size=self.resize_shape, ch=3)
-        if "controller" in self.augm_red.get(gen, ""):
-            controller_args = self.augm_red[gen]["controller_args"]
-            self.noise_gen.setController(self.augm_red[gen]["controller"](*controller_args))
+        if self.NoiseSelector:
+            NoiseSelector.reset(size=self.resize_shape, ch=3)
+        else:
+            self.augm_red_type = set(augm_red.keys())
+            gen_str = self.augm_red_type.intersection(set(NOISE_GENERATORS.keys()))
+            gen = gen_str.pop() if len(gen_str) > 0 else "normal"
+            self.noise_gen_name = gen
+            self.noise_gen = NOISE_GENERATORS[gen](size=self.resize_shape, ch=3)
+            if "controller" in self.augm_red.get(gen, ""):
+                controller_args = self.augm_red[gen]["controller_args"]
+                self.noise_gen.setController(self.augm_red[gen]["controller"](*controller_args))
 
-        noise_post_str = self.augm_red_type.intersection(set(NOISE_POSTPROCESSORS.keys()))
-        self.noise_postprocessor = {noise_post: NOISE_POSTPROCESSORS[noise_post](*self.augm_red[noise_post]["args"]) for noise_post in noise_post_str}
-        for noise_post in self.noise_postprocessor:
-            if "controller" in self.augm_red.get(noise_post, ""):
-                controller_args = self.augm_red[noise_post]["controller_args"]
-                self.noise_postprocessor[noise_post].setController(self.augm_red[noise_post]["controller"](*controller_args))
+            noise_post_str = self.augm_red_type.intersection(set(NOISE_POSTPROCESSORS.keys()))
+            self.noise_postprocessor = {noise_post: NOISE_POSTPROCESSORS[noise_post](*self.augm_red[noise_post]["args"]) for noise_post in noise_post_str}
+            for noise_post in self.noise_postprocessor:
+                if "controller" in self.augm_red.get(noise_post, ""):
+                    controller_args = self.augm_red[noise_post]["controller_args"]
+                    self.noise_postprocessor[noise_post].setController(self.augm_red[noise_post]["controller"](*controller_args))
 
         # load datasets
         self.img_paths, self.gt_paths, self.labels, self.types = self.load_dataset()  # self.labels => good : 0, anomaly : 1
@@ -226,17 +231,10 @@ class CDODataset(Dataset):
         bkg_msk = bkg_msk.astype(np.float32)
         return bkg_msk
 
-    def augment_image(self, image):
-
-        # get bkg mask
-        bkg_msk = self.estimate_background(image)
-
-        # generate random mask
-        patch_mask = np.zeros(image.shape[:2], dtype=np.float32)
+    def patch_mask(self, bkg_msk, shape):
+        patch_mask = np.zeros(shape[:2], dtype=np.float32)
         patch_number = np.random.randint(0, 5)
-        augmented_image = image
 
-        MAX_TRY_NUMBER = 200
         for i in range(patch_number):
             try_count = 0
             coor_min_dim1 = 0
@@ -250,32 +248,46 @@ class CDODataset(Dataset):
                 patch_dim1 = np.random.randint(self.h // 40, self.h // 10)
                 patch_dim2 = np.random.randint(self.w // 40, self.w // 10)
 
-                center_dim1 = np.random.randint(patch_dim1, image.shape[0] - patch_dim1)
-                center_dim2 = np.random.randint(patch_dim2, image.shape[1] - patch_dim2)
+                center_dim1 = np.random.randint(patch_dim1, shape[0] - patch_dim1)
+                center_dim2 = np.random.randint(patch_dim2, shape[1] - patch_dim2)
 
                 if self.skip_bkg:
                     if bkg_msk[center_dim1, center_dim2] > 0:
                         continue
 
-                coor_min_dim1 = np.clip(center_dim1 - patch_dim1, 0, image.shape[0])
-                coor_min_dim2 = np.clip(center_dim2 - patch_dim2, 0, image.shape[1])
+                coor_min_dim1 = np.clip(center_dim1 - patch_dim1, 0, shape[0])
+                coor_min_dim2 = np.clip(center_dim2 - patch_dim2, 0, shape[1])
 
-                coor_max_dim1 = np.clip(center_dim1 + patch_dim1, 0, image.shape[0])
-                coor_max_dim2 = np.clip(center_dim2 + patch_dim2, 0, image.shape[1])
+                coor_max_dim1 = np.clip(center_dim1 + patch_dim1, 0, shape[0])
+                coor_max_dim2 = np.clip(center_dim2 + patch_dim2, 0, shape[1])
 
                 break
 
             patch_mask[coor_min_dim1:coor_max_dim1, coor_min_dim2:coor_max_dim2] = 1.0
-
         
-        # generate noise image
-        noise_image = self.noise_gen(self.epoch_ratio)
+        return patch_mask
 
-        if "alpha" in self.augm_red_type:
-            blended_noise = self.noise_postprocessor["alpha"](self.epoch_ratio, noise_image[patch_mask > 0], augmented_image[patch_mask > 0])
-            augmented_image[patch_mask > 0] = blended_noise
+    def augment_image(self, image):
+
+        # get bkg mask
+        bkg_msk = self.estimate_background(image)
+
+        # generate random mask
+        patch_mask = self.patch_mask(bkg_msk, image.shape)
+
+        if self.NoiseSelector:
+            augmented_image = NoiseSelector.augment(image, patch_mask)
         else:
-            augmented_image[patch_mask > 0] = noise_image[patch_mask > 0]
+            # generate noise image
+            noise_image = self.noise_gen(self.epoch_ratio)
+
+            augmented_image = image
+
+            if "alpha" in self.augm_red_type:
+                blended_noise = self.noise_postprocessor["alpha"](self.epoch_ratio, noise_image[patch_mask > 0], augmented_image[patch_mask > 0])
+                augmented_image[patch_mask > 0] = blended_noise
+            else:
+                augmented_image[patch_mask > 0] = noise_image[patch_mask > 0]
 
         patch_mask = patch_mask[:, :, np.newaxis]
 

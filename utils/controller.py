@@ -18,7 +18,7 @@ class RandomController(Controller):
     def __init__(self, *args):
         super().__init__()
 
-    def compute(self, t):
+    def compute(self, t=0):
         return np.random.rand()
 
 class MeanRandomGaussianController(Controller):

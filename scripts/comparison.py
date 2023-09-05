@@ -15,6 +15,7 @@ def reorder_list(list1, list2):
 
 parser = argparse.ArgumentParser(description='Compare the runs')
 parser.add_argument('--logdir', type=str, default='logs', help='log directory')
+parser.add_argument('-o', '--output', type=str, default='./result/comparison/table.png', help='output path e.g.: ./result/comparison/table.png')
 parser.add_argument('--usemax', action='store_true', help='use max value instead of last 5 average')
 
 args = parser.parse_args()
@@ -26,6 +27,8 @@ datasets = set()
 exp_types = set()
 
 for tf_event in glob.glob(args.logdir + '/**/events.out.tfevents.*', recursive=True):
+	if "wide_resnet50_2-mvtec2d-wi-OOM-wi-MOM" in tf_event:
+		continue
 	ea = event_accumulator.EventAccumulator(tf_event)
 	file_path = Path(tf_event).relative_to(args.logdir)
 	dataset = file_path.parent.name
@@ -43,6 +46,8 @@ scalars_to_compare_map = {scalar: i for i, scalar in enumerate(scalars_to_compar
 values = np.zeros((len(exp_types), len(datasets), len(scalars_to_compare))) - 1
 
 for tf_event in glob.glob(args.logdir + '/**/events.out.tfevents.*', recursive=True):
+	if "wide_resnet50_2-mvtec2d-wi-OOM-wi-MOM" in tf_event:
+		continue
 	ea = event_accumulator.EventAccumulator(tf_event)
 	file_path = Path(tf_event).relative_to(args.logdir)
 	dataset_idx = datasets_map[file_path.parent.name]

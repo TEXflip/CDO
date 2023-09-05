@@ -7,7 +7,7 @@ from utils.csv_utils import *
 from utils.metrics import *
 from utils.training_utils import *
 from utils.controller import CONTROLLERS
-
+from utils.noise import NoiseSelector
 
 def train_epoch(model: CDOModel, dataloader: DataLoader, optimizer: torch.optim.Optimizer, device: str):
     # change the model into train mode
@@ -117,9 +117,15 @@ def main(args):
             train_dataset_inst.epoch_ratio = (epoch / kwargs['num_epochs'])
             loss_sum = train_epoch(model, train_dataloader, optimizer, device)
             tensorboard_logger.add_scalar('loss', loss_sum, epoch)
-            tensorboard_logger.add_scalar(train_dataset_inst.noise_gen_name, train_dataset_inst.noise_gen.value, epoch)
-            for k, v in train_dataset_inst.noise_postprocessor.items():
-                tensorboard_logger.add_scalar(f'{k}', v.value, epoch)
+            
+            if "NoiseSelector" in kwargs["augm_red"]:
+                NoiseSelector.step(loss_sum)
+                tensorboard_logger.add_scalar('noise generator', NoiseSelector.genotype_trajectory[-1][0], epoch)
+                tensorboard_logger.add_scalar('noise postprocessor', NoiseSelector.genotype_trajectory[-1][1], epoch)
+            else:
+                tensorboard_logger.add_scalar(train_dataset_inst.noise_gen_name, train_dataset_inst.noise_gen.value, epoch)
+                for k, v in train_dataset_inst.noise_postprocessor.items():
+                    tensorboard_logger.add_scalar(f'{k}', v.value, epoch)
 
             if epoch % kwargs['validation_epoch'] == 0 or epoch == kwargs['num_epochs'] - 1:
 
@@ -166,7 +172,7 @@ def str2bool(v):
 
 class AugmRedDictAction(argparse.Action):
     
-    custom_choices = ['amp', 'alpha', 'freq', 'normal']
+    custom_choices = ['amp', 'alpha', 'freq', 'normal', 'NoiseSelector']
 
     def __call__(self, parser, namespace, values, option_string=None):
         setattr(namespace, self.dest, {})

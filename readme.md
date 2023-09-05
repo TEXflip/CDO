@@ -41,6 +41,12 @@ for anomaly localization in factory setting.
 python train.py --gpu-id 0 --dataset mvtec2d --class-name carpet --backbone hrnet32 --MOM True --OOM True --gamma 2.
 ```
 
+## Generate plots
+```bash
+python scripts/comparison.py --logdir ./result -o ./result/comparison/table_last5avg.png
+python scripts/comparison.py --logdir ./result -o ./result/comparison/table_max.png --peak
+```
+
 
 ## CDO Architecture
 ![CDO](./pngs/framework.png)
